@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Code | Accuracy Collapse in LRMs</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+
+    pre {
+      background: #1e1e2f;
+      color: #d1d1e0;
+      padding: 1.5rem;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .copy-btn {
+      background: #6d28d9;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-size: 1.15rem;
+      font-weight: 600;
+      padding: 1rem;
+      background: #eef2ff;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+
+  <script>
+    function copyCode(id) {
+      let code = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(code);
+      alert("Code copied!");
+    }
+  </script>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+
+<!-- Navbar -->
+<nav class="bg-indigo-700 fixed w-full z-50 shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center text-white">
+    <h1 class="text-xl md:text-2xl font-semibold tracking-wide">Accuracy Collapse in LRMs</h1>
+
+    <div class="flex space-x-6 items-center">
+      <a href="index.html" class="hover:text-violet-300 font-medium">Home</a>
+
+      <div class="relative group">
+        <button class="hover:text-violet-300 font-medium">Stages ▼</button>
+        <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-lg mt-2 py-2 w-64">
+          <a href="stage1.html" class="block px-4 py-2 hover:bg-violet-100">Stage 1 – Architecture & Setup</a>
+          <a href="stage2.html" class="block px-4 py-2 hover:bg-violet-100">Stage 2 – Dataset Generation</a>
+          <a href="stage3.html" class="block px-4 py-2 hover:bg-violet-100">Stage 3 – Baseline Evaluation</a>
+          <a href="stage4.html" class="block px-4 py-2 hover:bg-violet-100">Stage 4 – Task Decomposition</a>
+          <a href="stage5.html" class="block px-4 py-2 hover:bg-violet-100">Stage 5 – Self-Consistency</a>
+        </div>
+      </div>
+
+      <a href="code.html" class="hover:text-violet-300 font-medium">Code</a>
+      <a href="about.html" class="hover:text-violet-300 font-medium">About</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Header -->
+<section class="pt-28 pb-10 text-center bg-white">
+  <h1 class="text-4xl font-bold text-indigo-700">Complete Project Code</h1>
+  <p class="text-gray-600 mt-3 text-lg">All Stages from Google Colab (Baseline → Mitigation)</p>
+</section>
+
+<div class="max-w-6xl mx-auto px-6 pb-20 space-y-6">
+
+<!-- ================================ -->
+<!-- IMPORTS & MODEL LOADING -->
+<!-- ================================ -->
+<details>
+  <summary>Imports & Model Loading</summary>
+  <button class="copy-btn" onclick="copyCode('import')">Copy</button>
+
+<pre id="import"><code>
+!pip install transformers accelerate sentencepiece -q
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import pandas as pd
+import matplotlib.pyplot as plt
+import torch, random, re
+from collections import Counter
+import seaborn as sns
+
+model_name = "google/flan-t5-large"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- HELPER FUNCTIONS -->
+<!-- ================================ -->
+<details>
+  <summary>Helper Function</summary>
+  <button class="copy-btn" onclick="copyCode('help')">Copy</button>
+
+<pre id="help"><code>
+# Convert English words → digits
+def normalize(pred):
+    text = pred.lower().strip().replace(",", "")
+    word_map = {
+        "zero":"0","one":"1","two":"2","three":"3","four":"4","five":"5",
+        "six":"6","seven":"7","eight":"8","nine":"9","ten":"10",
+        "eleven":"11","twelve":"12","thirteen":"13","fourteen":"14",
+        "fifteen":"15","sixteen":"16","seventeen":"17","eighteen":"18",
+        "nineteen":"19","twenty":"20"
+    }
+    for w, d in word_map.items():
+        text = text.replace(w, d)
+    # Extract number
+    nums = re.findall(r"-?\d+", text)
+    return nums[0] if nums else text
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- STAGE 1: BASELINE EVALUATION -->
+<!-- ================================ -->
+<details>
+  <summary>📌 Stage 1 – Baseline Evaluation</summary>
+  <button class="copy-btn" onclick="copyCode('code1')">Copy</button>
+
+<pre id="code1"><code>
+def generate_dataset():
+    data = []
+    for level in range(1, 7):
+        for _ in range(10):
+            a, b = random.randint(1, 20), random.randint(1, 20)
+            op = random.choice(["+", "-"])
+            question = f"What is {a} {op} {b}?"
+            answer = str(eval(f"{a}{op}{b}"))
+            data.append({"input": question, "expected": answer, "difficulty": level})
+    return pd.DataFrame(data)
+
+dataset = generate_dataset()
+
+rows = []
+for _, row in dataset.iterrows():
+    inputs = tokenizer(row["input"], return_tensors="pt")
+    with torch.no_grad():
+        out = model.generate(**inputs, max_new_tokens=10, temperature=0.0)
+
+    pred = tokenizer.decode(out[0], skip_special_tokens=True)
+    norm_pred = normalize(pred)
+    correct = int(norm_pred == row["expected"])
+
+    rows.append({
+        "input": row["input"],
+        "expected": row["expected"],
+        "predicted": norm_pred,
+        "difficulty": row["difficulty"],
+        "token_length": out.shape[1],
+        "correct": correct
+    })
+
+df_base = pd.DataFrame(rows)
+df_base.to_csv("baseline_results.csv", index=False)
+df_base.head()
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- STAGE 2: VISUALIZATION -->
+<!-- ================================ -->
+<details>
+  <summary>📊 Stage 2 – Visualization & Metrics</summary>
+  <button class="copy-btn" onclick="copyCode('code2')">Copy</button>
+
+<pre id="code2"><code>
+acc = df_base.groupby("difficulty")["correct"].mean().reset_index()
+
+plt.figure(figsize=(7,4))
+plt.plot(acc["difficulty"], acc["correct"], marker="o")
+plt.title("Baseline Accuracy vs Difficulty")
+plt.xlabel("Difficulty Level")
+plt.ylabel("Accuracy")
+plt.grid(True)
+plt.show()
+
+avg_tokens = df_base.groupby("difficulty")["token_length"].mean().reset_index()
+
+plt.figure(figsize=(7,4))
+plt.plot(avg_tokens["difficulty"], avg_tokens["token_length"], marker="o", color="orange")
+plt.title("Token Length vs Difficulty")
+plt.xlabel("Difficulty Level")
+plt.ylabel("Token Length")
+plt.grid(True)
+plt.show()
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- STAGE 3: TASK GENERATION -->
+<!-- ================================ -->
+<details>
+  <summary>🧩 Stage 3 – Task Generation</summary>
+  <button class="copy-btn" onclick="copyCode('code3')">Copy</button>
+
+<pre id="code3"><code>
+def generate_arithmetic_task(level):
+    if level <= 2:
+        a, b = random.randint(1, 20), random.randint(1, 20)
+        op = random.choice(["+", "-"])
+        q = f"What is {a} {op} {b}?"
+        ans = str(eval(f"{a}{op}{b}"))
+
+    elif level <= 4:
+        a, b, c = random.randint(1,15), random.randint(1,15), random.randint(1,15)
+        q = f"Calculate ({a} + {b}) × {c}"
+        ans = str((a+b) * c)
+
+    else:
+        start = random.randint(1,5)
+        r = random.randint(2,4)
+        seq = [start * (r**i) for i in range(5)]
+        q = f"What is the next number in the sequence {seq}?"
+        ans = str(seq[-1] * r)
+
+    return {"input": q, "answer": ans, "difficulty": level}
+
+def generate_dataset_v2(n=10, max_level=6):
+    data = []
+    for level in range(1, max_level+1):
+        for _ in range(n):
+            data.append(generate_arithmetic_task(level))
+    return pd.DataFrame(data)
+
+dataset_v2 = generate_dataset_v2()
+dataset_v2.head()
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- STAGE 4: TASK DECOMPOSITION -->
+<!-- ================================ -->
+<details>
+  <summary>🔁 Stage 4 – Task Decomposition</summary>
+  <button class="copy-btn" onclick="copyCode('code4')">Copy</button>
+
+<pre id="code4"><code>
+def decompose_prompt(q):
+    return "Solve step-by-step and give only the final answer.\n" + q
+
+rows=[]
+for _, row in dataset_v2.iterrows():
+    prompt = decompose_prompt(row["input"])
+    inputs = tokenizer(prompt, return_tensors="pt")
+
+    with torch.no_grad():
+        out = model.generate(**inputs, max_new_tokens=40)
+
+    pred = normalize(tokenizer.decode(out[0], skip_special_tokens=True))
+
+    rows.append({
+        "input": row["input"],
+        "expected": row["answer"],
+        "predicted": pred,
+        "difficulty": row["difficulty"],
+        "correct": int(pred == row["answer"])
+    })
+
+df_decomp = pd.DataFrame(rows)
+df_decomp.to_csv("decomposition_results.csv", index=False)
+
+acc_decomp = df_decomp.groupby("difficulty")["correct"].mean().reset_index()
+acc_decomp
+
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- STAGE 5: SELF-CONSISTENCY -->
+<!-- ================================ -->
+<details>
+  <summary>📈 Stage 5 – Self-Consistency</summary>
+  <button class="copy-btn" onclick="copyCode('code5')">Copy</button>
+
+<pre id="code5"><code>
+def self_consistency(q, num_samples=5):
+    preds = []
+    prompt = "Solve carefully and give only the final answer: " + q
+    inputs = tokenizer(prompt, return_tensors="pt")
+
+    for _ in range(num_samples):
+        with torch.no_grad():
+            out = model.generate(**inputs, max_new_tokens=30, temperature=0.7, do_sample=True)
+
+        pred = normalize(tokenizer.decode(out[0], skip_special_tokens=True))
+        preds.append(pred)
+
+    final = Counter(preds).most_common(1)[0][0]
+    return final, preds
+
+rows=[]
+for _, row in dataset_v2.iterrows():
+    final, all_preds = self_consistency(row["input"])
+    rows.append({
+        "input": row["input"],
+        "expected": row["answer"],
+        "final_pred": final,
+        "all_preds": all_preds,
+        "difficulty": row["difficulty"],
+        "correct": int(final == row["answer"])
+    })
+
+df_sc = pd.DataFrame(rows)
+df_sc.to_csv("self_consistency_results.csv", index=False)
+df_sc.head()
+</code></pre>
+</details>
+
+<!-- ================================ -->
+<!-- FINAL COMPARISON PLOT -->
+<!-- ================================ -->
+<details>
+  <summary>📈 Final Comparision</summary>
+  <button class="copy-btn" onclick="copyCode('final')">Copy</button>
+
+<pre id="final"><code>
+comparison = pd.DataFrame({
+    "difficulty": range(1,7),
+    "baseline": acc["correct"],
+    "decomposition": acc_decomp["correct"],
+    "self_consistency": df_sc.groupby("difficulty")["correct"].mean().values
+})
+
+plt.figure(figsize=(8,5))
+plt.plot(comparison["difficulty"], comparison["baseline"], marker="o", label="Baseline")
+plt.plot(comparison["difficulty"], comparison["decomposition"], marker="o", label="Decomposition")
+plt.plot(comparison["difficulty"], comparison["self_consistency"], marker="o", label="Self-Consistency")
+plt.title("Accuracy vs Difficulty (All Methods)")
+plt.xlabel("Difficulty Level")
+plt.ylabel("Accuracy")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+comparison
+
+</code></pre>
+</details>
+
+<a href="https://colab.research.google.com/drive/1LhAZsjaF6prnwS0oNe9ZN34DJ1raZ18X?usp=sharing"
+   target="_blank"
+   class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">
+   📘 View Full Colab Notebook
+</a>
+
+</div>
+
+<!-- Footer -->
+<footer class="bg-indigo-700 text-white py-6 text-center">
+  <p class="text-lg font-medium">Developed by <span class="text-violet-300">Sanjay Kumar D</span></p>
+  <p class="text-sm">Guided by <strong>Mr. Rajesh N</strong> | MCA Department</p>
+  <p class="text-xs text-gray-300 mt-2">© 2025 Accuracy Collapse in LRMs Project</p>
+</footer>
+
+</body>
+</html>

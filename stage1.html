@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage 1 – Architecture & Setup | Accuracy Collapse in LRMs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+    .terminal {
+      background-color: #0f1724;
+      color: #e6eef8;
+      font-family: 'Courier New', monospace;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      max-height: 420px;
+    }
+    .card { background: white; border-radius: 12px; box-shadow: 0 6px 18px rgba(15,23,42,0.08); }
+    .hidden { display: none; }
+    pre.codeblock {
+      background: #0b1220;
+      color: #e6eef8;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- NAVBAR -->
+ <nav class="bg-indigo-700 fixed w-full z-50 shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center text-white">
+    <h1 class="text-xl md:text-2xl font-semibold tracking-wide">Accuracy Collapse in LRMs</h1>
+
+    <div class="flex space-x-6 items-center">
+      <!-- Home -->
+      <a href="index.html" class="hover:text-violet-300 font-medium">Home</a>
+
+      <!-- Dropdown for Stages -->
+      <div class="relative group">
+        <button class="hover:text-violet-300 font-medium focus:outline-none">
+          Stages ▼
+        </button>
+        <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-lg mt-2 py-2 w-64">
+          <a href="stage1.html" class="block px-4 py-2 hover:bg-violet-100 font-semibold text-indigo-700">Stage 1 – Architecture & Setup</a>
+          <a href="stage2.html" class="block px-4 py-2 hover:bg-violet-100">Stage 2 – Visualization</a>
+          <a href="stage3.html" class="block px-4 py-2 hover:bg-violet-100">Stage 3 – Baseline Evaluation</a>
+          <a href="stage4.html" class="block px-4 py-2 hover:bg-violet-100">Stage 4 – Task Decomposition</a>
+          <a href="stage5.html" class="block px-4 py-2 hover:bg-violet-100">Stage 5 – Self-Consistency</a>
+        </div>
+      </div>
+
+      <!-- Other Links -->
+      <a href="code.html" class="hover:text-violet-300 font-medium">Code</a>
+      <a href="about.html" class="hover:text-violet-300 font-medium">About</a>
+    </div>
+  </div>
+ </nav>
+
+  <!-- Main Section -->
+  <main class="pt-24 pb-16 px-6 md:px-20">
+    <!-- Title -->
+    <section class="text-center mb-10">
+      <h2 class="text-3xl font-bold text-indigo-700 mb-2">Stage 1 – Architecture & Setup</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        In this stage we set up the environment and load the reasoning model. The demo shows the import & model-loading steps, helper functions setup, then the pipeline initialization.
+      </p>
+    </section>
+
+    <!-- Architecture Diagram -->
+    <section class="text-center mb-10">
+      <h3 class="text-xl font-semibold mb-3 text-gray-700">System Architecture Overview</h3>
+      <img src="images/architecture.png" alt="System Architecture" class="mx-auto rounded-xl shadow-lg w-2/3">
+      <p class="text-gray-600 mt-4">The architecture connects task generation, model inference, evaluation, and visualization.</p>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="text-center mb-6">
+      <button id="runDemoBtn" class="bg-violet-600 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all">
+        ▶️ Initialize Setup (Imports → Helpers → Pipeline)
+      </button>
+    </section>
+
+    <!-- Demo Output -->
+    <section id="demoOutput" class="hidden card p-6 mb-8">
+      <h3 class="text-lg font-semibold text-indigo-700 mb-3">Console Output</h3>
+      <div class="terminal" id="terminalOutput">
+        Ready to run...
+      </div>
+    </section>
+
+    <!-- After-demo note -->
+    <section id="afterNote" class="hidden card p-6 mb-8">
+      <h3 class="text-lg font-semibold text-indigo-700 mb-3">Status</h3>
+      <p class="text-gray-700">Environment initialized, helper functions loaded, Stage 1 ready. You can now move to Stage 2.</p>
+    </section>
+
+    <!-- View Code & Next Stage Buttons -->
+    <section class="text-center mt-4 space-x-4">
+      <button onclick="window.location.href='code.html#stage1'"
+              class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-all">
+        💻 View Code
+      </button>
+
+      <button onclick="window.location.href='stage2.html'"
+              class="bg-violet-600 text-white px-6 py-2 rounded-lg hover:bg-violet-700 transition-all">
+        ⏭️ Move to Next Stage
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-indigo-700 text-white py-6 mt-10 text-center">
+    <p class="text-lg font-medium">Developed by <span class="text-violet-300">Sanjay Kumar D</span></p>
+    <p class="text-sm mt-1">Guided by <strong>Mr. Rajesh N</strong> | MCA Department</p>
+    <p class="text-xs text-gray-300 mt-2">© 2025 Accuracy Collapse in LRMs Project | All Rights Reserved</p>
+  </footer>
+
+  <!-- JavaScript for Demo -->
+  <script>
+    const runBtn = document.getElementById("runDemoBtn");
+    const demoOutput = document.getElementById("demoOutput");
+    const terminal = document.getElementById("terminalOutput");
+    const afterNote = document.getElementById("afterNote");
+
+    // Phase 1: imports + model loading (show commands then simulated HF logs)
+    const phase1_lines = [
+      "# Install packages (simulated)",
+      "!pip install transformers accelerate sentencepiece -q",
+      "",
+      "# Import statements",
+      "from transformers import AutoTokenizer, AutoModelForSeq2SeqLM",
+      "import pandas as pd",
+      "import matplotlib.pyplot as plt",
+      "import torch, random, re",
+      "from collections import Counter",
+      "import seaborn as sns",
+      "",
+      "# Model loading",
+      'model_name = "google/flan-t5-large"',
+      "tokenizer = AutoTokenizer.from_pretrained(model_name)",
+      "model = AutoModelForSeq2SeqLM.from_pretrained(model_name)"
+    ];
+
+    // Simulated huggingface download/log messages (split into lines to animate)
+    const hf_simulated = [
+      "/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_auth.py:94: UserWarning:",
+      "The secret `HF_TOKEN` does not exist in your Colab secrets.",
+      "To authenticate with the Hugging Face Hub, create a token in your settings tab...",
+      "",
+      "tokenizer_config.json: 2.54k/2.54k [00:00<00:00, 62.5kB/s]",
+      "spiece.model: 100% 792k/792k [00:00<00:00, 380kB/s]",
+      "tokenizer.json: 100% 2.42M/2.42M [00:00<00:00, 23.7MB/s]",
+      "special_tokens_map.json: 100% 2.20k/2.20k [00:00<00:00, 94.2kB/s]",
+      "config.json: 100% 662/662 [00:00<00:00, 43.2kB/s]",
+      "model.safetensors: 100% 3.13G/3.13G [00:33<00:00, 53.6MB/s]",
+      "generation_config.json: 100% 147/147 [00:00<00:00, 12.3kB/s]",
+      ""
+    ];
+
+    // Phase 2: helper functions demo (show normalize() code then confirm)
+    const phase2_lines = [
+      "# Helper function: normalize()",
+      "def normalize(pred):",
+      "    text = pred.lower().strip().replace(\",\", \"\")",
+      "    word_map = { 'zero':'0', 'one':'1', 'two':'2', 'three':'3', 'four':'4', 'five':'5',",
+      "                 'six':'6','seven':'7','eight':'8','nine':'9','ten':'10' }",
+      "    for w, d in word_map.items():",
+      "        text = text.replace(w, d)",
+      "    nums = re.findall(r\"-?\\d+\", text)",
+      "    return nums[0] if nums else text",
+      "",
+      "Helper functions loaded and tested."
+    ];
+
+    // Phase 3: Stage 1 original demo steps
+    const phase3_lines = [
+      "Setting up dataset templates for arithmetic and logic tasks...",
+      "Creating task generator with difficulty levels 1 → 6...",
+      "Generating sample tasks (10 per level)...",
+      "Preparing evaluation harness and CSV writer...",
+      "Running quick self-check on small sample...",
+      "System check: ✅ All modules loaded successfully!",
+      "",
+      "Ready to begin Stage 2 – Dataset Generation."
+    ];
+
+    // helper to print lines with delay, returns a Promise to chain phases
+    function printLinesSequential(lines, intervalMs=800, startTextAppend = false) {
+      return new Promise((resolve) => {
+        let idx = 0;
+        const timer = setInterval(() => {
+          // append with newline
+          terminal.textContent += (startTextAppend ? "" : "") + "\n" + lines[idx];
+          terminal.scrollTop = terminal.scrollHeight;
+          idx++;
+          if (idx >= lines.length) {
+            clearInterval(timer);
+            // small pause after phase
+            setTimeout(resolve, 600);
+          }
+        }, intervalMs);
+      });
+    }
+
+    runBtn.addEventListener("click", async () => {
+      runBtn.disabled = true;
+      demoOutput.classList.remove("hidden");
+      afterNote.classList.add("hidden");
+      terminal.textContent = "Starting environment initialization...";
+
+      // Phase 1: show import & load commands
+      await printLinesSequential(phase1_lines, 650);
+
+      // Simulated HF download logs (slightly faster)
+      await printLinesSequential(hf_simulated, 420);
+
+      // Pause then phase2: helper functions
+      await printLinesSequential(phase2_lines, 550);
+
+      // Pause then phase3: stage1 steps
+      await printLinesSequential(phase3_lines, 700);
+
+      // final message and reveal note
+      terminal.textContent += "\n\n✅ Environment ready — Stage 1 initialization complete.";
+      terminal.scrollTop = terminal.scrollHeight;
+      afterNote.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>
